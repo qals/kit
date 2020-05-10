@@ -1,8 +1,8 @@
 {
-    "name": "royaz/als",
+    "name": "qals/kit",
     "type": "library",
     "description": "Private development kit",
-    "homepage": "https://github.com/royaz/als",
+    "homepage": "https://github.com/qals/kit",
     "authors": [{"name": "Roy"}],
     "require": {
         "php": ">=5.2",
@@ -12,4 +12,3 @@
         "psr-4": {"Als\\": "lib/"}
     }
 }
-
