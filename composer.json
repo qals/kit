@@ -6,7 +6,7 @@
     "authors": [{"name": "Roy"}],
     "require": {
         "php": ">=5.2",
-        "guzzlehttp/guzzle": "~6.0"
+        "symfony/http-client": "^5.0"
     },
     "autoload": {
         "psr-4": {"Als\\": "lib/"}

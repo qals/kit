@@ -1,8 +1,7 @@
 <?php
 namespace Als;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\BadResponseException;
+use Symfony\Component\HttpClient\HttpClient;
 
 class GoogleAuth
 {
@@ -76,26 +75,18 @@ class GoogleAuth
 
         $scope = is_null($scope) ? self::$scope : self::$scope . ' ' . $scope;
 
-        $client = new Client;
+        $client = HttpClient::create();
 
-        try 
-        {
-            $res = $client->post(self::$deviceEndpoint,[
-                'form_params' => [
-                    'client_id'     => $client_id,
-                    'scope'         => $scope
-                ]
-            ]);
-        }
-        catch (BadResponseException $e) 
-        {
-            $res = $e->getResponse();
-            $body = $res->getBody()->getContents();
-            return  ['code' => $res->getStatusCode(), 'error' => 'Get device_code falied', 'body' => $body];
-        }
+        $res = $client->request('POST', self::$deviceEndpoint,[
+            'body' => [
+                'client_id'     => $client_id,
+                'scope'         => $scope
+            ]
+        ]);
+  
         if($res->getStatusCode() == '200')
         {
-            $authdata = json_decode($res->getBody());
+            $authdata = json_decode($res->getContent());
             $user_code = $authdata->user_code;
 
             if($user_code != '')
@@ -107,33 +98,26 @@ class GoogleAuth
             }
             return ['code' => '1001', 'error' => 'Get device code falied', 'auth'=> $authdata];
         }
+
+        return  ['code' => $res->getStatusCode(), 'error' => 'Get device_code falied', 'body' => $res->getContent(false)];
     }
 
     static function Device($code, $client_id, $client_secret)
     {
-        $client = new Client;
+        $client = HttpClient::create();
 
-        try
-        {
-            $res = $client->post(self::$tokenEndpoint, [
-                'form_params' => [
-                    'device_code'   => $code,
-                    'client_id'     => $client_id,
-                    'client_secret' => $client_secret,
-                    'grant_type'    => 'urn:ietf:params:oauth:grant-type:device_code'
-                ]
-            ]);
-        }
-        catch (BadResponseException $e) 
-        {
-            $res = $e->getResponse();
-            $body = $res->getBody()->getContents();
-            return  ['code' => $res->getStatusCode(), 'error' => 'Authorization device falied', 'body' => $body];
-        }
+        $res = $client->request('POST', self::$tokenEndpoint,[
+            'body' => [
+                'device_code'   => $code,
+                'client_id'     => $client_id,
+                'client_secret' => $client_secret,
+                'grant_type'    => 'urn:ietf:params:oauth:grant-type:device_code'
+            ]
+        ]);
 
         if($res->getStatusCode() == '200')
         {
-            $authdata = json_decode($res->getBody());
+            $authdata = json_decode($res->getContent());
             $access_token = $authdata->access_token;
 
             if($access_token != '')
@@ -143,35 +127,28 @@ class GoogleAuth
 
                 return $res;
             }
-            return ['code' => '1002', 'error' => 'Authorization device error', 'auth'=> $authdata];
+            return ['code' => '1002', 'error' => 'Authorization device error', 'auth' => $authdata, 'auth_status' => '200'];
         }
-        return  ['code' => '1002', 'error' => "Authorization device error"];
+
+        return  ['code' => $res->getStatusCode(), 'error' => 'Authorization device falied', 'body' => $res->getContent(false)];
     }
 
     static function userinfo($code)
     {
-        $client = new Client;
-        try
-        {
-            $res = $client->get(self::$userInfoEndpoint. '?access_token=' . $code);
-        }
-        catch (BadResponseException $e) 
-        {
-            $res = $e->getResponse();
-            $body = $res->getBody()->getContents();
-            return  ['code' => $res->getStatusCode(), "error" => 'Get Userinfo falied', 'body' => $body];
-        }
+        $client = HttpClient::create();
+
+        $res = $client->request('GET', self::$userInfoEndpoint. '?access_token=' . $code);
 
         if($res->getStatusCode() == '200')
         {
-            $data = json_decode($res->getBody());
+            $data = json_decode($res->getContent());
             if( $data->sub != '' && $data->email != '')
                 return [ 'code' => '200', 'sub' => $data->sub, 'email' => $data->email];
 
-            return ['code' => '1003', 'error' => 'Get Userinfo falied', 'data' => $data];
+            return ['code' => '1003', 'error' => 'Get Userinfo falied', 'data' => $data, 'auth_status' => '200'];
         }
 
-        return ['code' => '1003', 'error' => 'Get Userinfo falied'];
+        return  ['code' => $res->getStatusCode(), "error" => 'Get Userinfo falied', 'body' => $res->getContent(false)];
     }
 
     static function Url($client_id = null, $scope = null)
@@ -193,65 +170,50 @@ class GoogleAuth
 
     static function Refresh($code, $client_id, $client_secret)
     {
-        $client = new Client;
-        try
-        {
-            $res = $client->post(self::$tokenEndpoint,[
-                'form_params' => [
-                    'refresh_token' => $code,
-                    'client_id'     => $client_id,
-                    'client_secret' => $client_secret,
-                    'grant_type'    => 'refresh_token'
-                ]
-            ]);
-        }
-        catch (BadResponseException $e) 
-        {
-            $res = $e->getResponse();
-            $body = $res->getBody()->getContents();
-            return  ['code' => $res->getStatusCode(), 'error' => 'Refresh token failed', 'body' => $body];
-        }
+        $client = HttpClient::create();
+
+        $res = $client->request('POST', self::$tokenEndpoint,[
+            'body' => [
+                'refresh_token' => $code,
+                'client_id'     => $client_id,
+                'client_secret' => $client_secret,
+                'grant_type'    => 'refresh_token'
+            ]
+        ]);
 
         if($res->getStatusCode() == 200)
         {
-            $authdata = json_decode($res->getBody());
+            $authdata = json_decode($res->getContent());
             $access_token = $authdata->access_token;
 
             if($access_token != '')
             {
                 return ['code' => '200', 'auth' => $authdata ];
             }
-            return ['code' => '1004', "msg" => 'Refresh token failed', 'auth'=> $authdata];
+
+            return ['code' => '1004', "msg" => 'Refresh token failed', 'auth'=> $authdata, 'auth_status' => '200'];
         }
 
-        return  ['code' => '1004', 'error' => 'Refresh token falied'];
+        return  ['code' => $res->getStatusCode(), 'error' => 'Refresh token failed', 'body' => $res->getContent(false)];
     }
 
     static function Auth($auth_code, $client_id, $client_secret)
     {
-        $client = new Client;
-        try
-        {
-            $res = $client->post(self::$tokenEndpoint, [
-                'form_params' => [
-                    'code'          => $auth_code,
-                    'client_id'     => $client_id,
-                    'client_secret' => $client_secret,
-                    'redirect_uri'  => self::$redirect_uri,
-                    'grant_type'    => 'authorization_code'
-                ]
-            ]);
-        }
-        catch (BadResponseException $e) 
-        {
-            $res = $e->getResponse();
-            $body = $res->getBody()->getContents();
-            return  ['code' => $res->getStatusCode(), 'error' => 'Authorization falied', 'body' => $body];
-        }
+        $client = HttpClient::create();
+
+        $res = $client->request('POST', self::$tokenEndpoint,[
+            'body' => [
+                'code'          => $auth_code,
+                'client_id'     => $client_id,
+                'client_secret' => $client_secret,
+                'redirect_uri'  => self::$redirect_uri,
+                'grant_type'    => 'authorization_code'
+            ]
+        ]);
 
         if($res->getStatusCode() == 200)
         {
-            $authdata = json_decode($res->getBody());
+            $authdata = json_decode($res->getContent());
             $access_token = $authdata->access_token;
 
             if($access_token != '')
@@ -261,9 +223,10 @@ class GoogleAuth
 
                 return $res;
             }
-            return ['code' => '1005', 'error' => 'Authorization falied', 'auth'=> $authdata];
+            return ['code' => '1005', 'error' => 'Authorization falied', 'auth'=> $authdata, 'auth_status' => '200'];
         }
-        return  ['code' => '1005', "error" => "Authorization falied"];
+
+        return  ['code' => $res->getStatusCode(), 'error' => 'Authorization falied', 'body' =>  $res->getContent(false)];
     }
 }
 

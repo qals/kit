@@ -6,15 +6,15 @@ include "lib/GoogleAuth.php";
 use Als\GoogleAuth;
 
 $client_id = '';
-$client_sv = '';
+$client_sec = '';
 
-$auth = new GoogleAuth($client_id, $client_sv);
+$auth = new GoogleAuth($client_id, $client_sec);
 
 /*
+$code = 'AH-1Ng3GefaZbKj_hvN0cfQrvTn0sl04DcMS-ksth-8vxbBDN1u43-Tqjdv2lhYgJLrxV_dcTNB_4l23dxMtcYYO8s620ZV99A';
 $data = $auth->getDevice("https://www.googleapis.com/auth/drive.file");
-var_dump($data);
-$code = ' device_code ';
 $data = $auth->authDevice($code);
+var_dump($data);
 // */
 
 /*
