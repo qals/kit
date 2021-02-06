@@ -1,4 +1,7 @@
 <?php
+
+## from https://github.com/beyosoft/multiworker
+
 namespace Als;
 
 class Worker {
