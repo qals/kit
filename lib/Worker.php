@@ -1,5 +1,5 @@
 <?php
-namespace beyosoft\cli;
+namespace Als;
 
 class Worker {
     
