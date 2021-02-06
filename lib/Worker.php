@@ -196,16 +196,9 @@ class Worker {
     }    
     
     public function Log($message){
-        static $openlog = false;
-        if(!$openlog) {
-            $openlog = openlog('multiworker', LOG_PID, LOG_DAEMON);
-        }
-        
-        
-        if($this->deamon) {
+        if ($this->debug) {
             echo getmypid()." ".date('Y-m-d H:i:s')." ".$message. "\n";
         }
-        syslog(LOG_INFO, $message);
     }
     
     protected function isMaster() {
